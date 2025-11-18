@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session as DBSession
 from datetime import datetime, timedelta
 
 from .database import Base, engine, get_db
@@ -39,7 +39,7 @@ def health():
 
 
 @app.post("/auth/register", response_model=Token)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
+def register(user_in: UserCreate, db: DBSession = Depends(get_db)):
     existing = db.query(User).filter((User.email == user_in.email) | (User.username == user_in.username)).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists")
@@ -57,7 +57,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/auth/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: DBSession = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
@@ -67,7 +67,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 
 @app.post("/auth/refresh", response_model=Token)
-def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
+def refresh(body: RefreshRequest, db: DBSession = Depends(get_db)):
     from .auth import decode_token, create_access_token, create_refresh_token
 
     payload = decode_token(body.token)
@@ -80,11 +80,11 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
 
 
 @app.get("/auth/me", response_model=UserOut)
-def me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def me(token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     return UserOut(id=user.id, username=user.username, email=user.email)
 @app.get("/challenges")
-def list_challenges(pillar: str | None = None, energy_level: str | None = None, db: Session = Depends(get_db)):
+def list_challenges(pillar: str | None = None, energy_level: str | None = None, db: DBSession = Depends(get_db)):
     q = db.query(Challenge)
     if pillar:
         q = q.filter(Challenge.pillar == pillar)
@@ -108,7 +108,7 @@ def list_challenges(pillar: str | None = None, energy_level: str | None = None, 
 
 
 @app.get("/challenges/next")
-def next_challenge(pillar: str, energy_level: str, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def next_challenge(pillar: str, energy_level: str, token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     challenges = db.query(Challenge).filter(
         Challenge.pillar == pillar,
@@ -152,7 +152,7 @@ def next_challenge(pillar: str, energy_level: str, token: str = Depends(oauth2_s
 
 
 @app.post("/challenges/{challenge_id}/complete")
-def complete_challenge(challenge_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def complete_challenge(challenge_id: int, token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     c = db.query(Challenge).filter(Challenge.id == challenge_id).first()
     if not c:
@@ -187,7 +187,7 @@ def _points_for(duration_seconds: int, intensity: str | None) -> int:
 
 
 @app.post("/sessions", response_model=SessionOut)
-def create_session(body: SessionCreate, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def create_session(body: SessionCreate, token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     c = db.query(Challenge).filter(Challenge.id == body.challenge_id).first()
     if not c:
@@ -223,7 +223,7 @@ def create_session(body: SessionCreate, token: str = Depends(oauth2_scheme), db:
 
 
 @app.get("/activity/recent")
-def recent_activity(limit: int = 20, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def recent_activity(limit: int = 20, token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     items = db.query(Session).filter(Session.user_id == user.id).order_by(Session.started_at.desc()).limit(limit).all()
     out = []
@@ -241,7 +241,7 @@ def recent_activity(limit: int = 20, token: str = Depends(oauth2_scheme), db: Se
 
 
 @app.get("/progress/summary", response_model=SummaryOut)
-def progress_summary(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def progress_summary(token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     completed_count = db.query(ChallengeCompletion).filter(ChallengeCompletion.user_id == user.id).count()
     sessions = db.query(Session).filter(Session.user_id == user.id).all()
@@ -259,7 +259,7 @@ def progress_summary(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 @app.get("/progress/breakdown")
-def progress_breakdown(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def progress_breakdown(token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     by_pillar = {}
     sessions = db.query(Session).filter(Session.user_id == user.id).all()
@@ -288,7 +288,7 @@ def progress_breakdown(token: str = Depends(oauth2_scheme), db: Session = Depend
 
 
 @app.get("/progress/calendar")
-def progress_calendar(month: str | None = None, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def progress_calendar(month: str | None = None, token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     if month:
         try:
@@ -321,7 +321,7 @@ def progress_calendar(month: str | None = None, token: str = Depends(oauth2_sche
 
 
 @app.get("/progress/weekly")
-def progress_weekly(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def progress_weekly(token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     today = datetime.utcnow().date()
     start = today - timedelta(days=today.weekday())
@@ -344,7 +344,7 @@ def progress_weekly(token: str = Depends(oauth2_scheme), db: Session = Depends(g
 
 
 @app.get("/progress/monthly")
-def progress_monthly(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def progress_monthly(token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     today = datetime.utcnow().date()
     year, mon = today.year, today.month
@@ -382,7 +382,7 @@ def progress_monthly(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 @app.get("/progress/yearly")
-def progress_yearly(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def progress_yearly(token: str = Depends(oauth2_scheme), db: DBSession = Depends(get_db)):
     user = get_current_user(token, db)
     year = datetime.utcnow().year
     items = []
