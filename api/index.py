@@ -1,4 +1,5 @@
+from mangum import Mangum
 from app.main import app
 
-# Vercel handler
-handler = app
+# Vercel serverless handler
+handler = Mangum(app, lifespan="off")
