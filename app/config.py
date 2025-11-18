@@ -12,11 +12,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 
 REFRESH_TOKEN_EXPIRE_MINUTES = int(os.environ.get("REFRESH_TOKEN_EXPIRE_MINUTES", "10080"))
 
 def _normalize_pg_url(url: str) -> str:
-    """Normalize PostgreSQL URL for SQLAlchemy with psycopg2 driver"""
+    """Normalize PostgreSQL URL for SQLAlchemy with psycopg driver"""
     u = url
-    # Add psycopg2 driver if not present
-    if "+psycopg2" not in u and u.startswith("postgres"):
-        u = u.replace("postgres://", "postgresql+psycopg2://").replace("postgresql://", "postgresql+psycopg2://")
+    # Add psycopg driver if not present
+    if "+psycopg" not in u and u.startswith("postgres"):
+        u = u.replace("postgres://", "postgresql+psycopg://").replace("postgresql://", "postgresql+psycopg://")
     # Ensure SSL mode is required for Neon
     if "sslmode=" not in u and ".neon.tech" in u:
         sep = "&" if "?" in u else "?"
