@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.pool import NullPool
 from .config import DATABASE_URL
 
 
@@ -10,10 +11,7 @@ class Base(DeclarativeBase):
 # Neon Postgres engine configuration optimized for Vercel serverless
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=5,  # Smaller pool for serverless
-    max_overflow=10,
-    pool_recycle=300,  # Recycle connections after 5 minutes
+    poolclass=NullPool,  # 🔥 Required for serverless - no connection pooling
     echo=False,
 )
 

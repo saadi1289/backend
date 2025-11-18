@@ -16,7 +16,7 @@
     }
   ],
   "env": {
-    "DATABASE_URL": "postgresql://neondb_owner:npg_BbNGeHiSR52t@ep-broad-resonance-adspvv0t-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require",
+    "DATABASE_URL": "postgresql+psycopg://neondb_owner:npg_BbNGeHiSR52t@ep-broad-resonance-adspvv0t-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require",
     "SECRET_KEY": "-ZgpFBv9o864xoVvptXa-owx329aE3jbx8VuCEDeMSI",
     "JWT_ALGORITHM": "HS256",
     "ACCESS_TOKEN_EXPIRE_MINUTES": "30",

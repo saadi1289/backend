@@ -17,8 +17,6 @@ from .auth import (
 )
 
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="CorpFinity Backend", version="1.0.0")
 
 app.add_middleware(
